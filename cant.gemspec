@@ -6,11 +6,23 @@ Gem::Specification.new do |s|
   s.name        = "cant"
   s.version     = Cant::VERSION
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ["TODO: Write your name"]
-  s.email       = ["TODO: Write your email address"]
-  s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.authors     = ["thierry.henrio"]
+  s.email       = ["thierry.henrio@gmail.com"]
+  s.homepage    = "https://github.com/thierryhenrio"
+  s.summary     = %q{tiny authorization module, declarative dsl}
+  s.description = %q{
+    extend Cant
+    -----------
+        self.extend(Cant).use_backend(backend)
+        
+    declare rules in backend
+    ------------------------
+        can {|request| request.url =~ /admin/ and current_user.admin?}
+        
+    verify
+    ------
+        can? request
+    }
 
   s.rubyforge_project = "cant"
 
