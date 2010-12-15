@@ -18,12 +18,12 @@ module Cant
       end
 
       class Rule
-        # def initialize(who, can_do, what, &block)
-        #   @who = who
-        #   @can_do
-        # end
-        def can?(user, perform, something)
-          true
+        def initialize(options={}, &block)
+          @options = options
+          @block = block
+        end
+        def can?
+          @block.call
         end
       end
     end
@@ -55,17 +55,21 @@ describe Cant::Backend::Code do
 end
 
 describe Cant::Backend::Code::Rule do
+  describe "#new" do
+    it 'accept options' do
+      rule = Cant::Backend::Code::Rule.new(:who => :baby)
+    end 
+  end
+    
   context 'with a block' do
-    describe "#new" do
-      it 'accept a block of code that can be evaluated later' do
-        r = Cant::Backend::Code::Rule.new {true}
-      end    
-    end
-
-    describe '#can' do
+    describe '#can?' do
       it 'evaluates block, yielding params' do
-        r = Cant::Backend::Code::Rule.new {true}
-        assert {r.can?(:baby, :eat, :chocolate)}
+        yes = Cant::Backend::Code::Rule.new {true}
+        assert {yes.can?}
+      end
+      it 'return value of block' do
+        no = Cant::Backend::Code::Rule.new {false}
+        deny {no.can?}
       end
     end
   end
