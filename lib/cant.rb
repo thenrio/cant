@@ -3,22 +3,20 @@ module Cant
     class Code
       # return true if any rule is true
       # else raise Cant::Unauthorized
-      def can?(context)
+      def can?(context={})
         raise Cant::Unauthorized.new(%{can't you do that?\n#{context}}) if rules.empty?
         true
       end
 
       # add a rule that when context is met, then response is what block evaluates to
-      # block can have up to two arguments
+      # block can have up one argument
       # - the context of invocation
-      # - the context of definition of this rule
-      # eg : 
-      #   cook.can(:rooms => [:kitchen]) {|context, restriction| 
-      #     return context[:user] and restriction[:rooms].include? context[:room]
-      #  }
+      # eg :
+       #  rooms = [:kitchen] 
+       #  backend.can {|context| rooms.include?(context[:room]) and context[:user]}
       # 
-      def can(context, &block)
-        rules << Rule.new(context, &block)
+      def can(&block)
+        rules << Rule.new(&block)
       end
 
       private
@@ -27,12 +25,11 @@ module Cant
       end
 
       class Rule
-        def initialize(context={}, &block)
-          @context = context
+        def initialize(&block)
           @block = block
         end
         def can?(context={})
-          return @block.call(context, @context)
+          return @block.call(context)
         end
       end
     end
