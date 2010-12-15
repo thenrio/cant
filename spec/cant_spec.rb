@@ -2,8 +2,8 @@ require 'spec_helper'
 require 'cant'
 require 'stunts/stunt'
 
-describe Cant::Backend::Code do
-  let(:backend) {Cant::Backend::Code.new}
+describe Cant::Backends::Simple do
+  let(:backend) {Cant::Backends.simple}
 
   context "empty, no rulez" do
     it "raises!" do
@@ -23,10 +23,10 @@ describe Cant::Backend::Code do
   end
   
   # integration|value test
-  context 'with an admin and a hacker' do
+  context 'with an admin and a user' do
     let(:admin) {Stunt.new(:admin => true)}
     let(:user) {Stunt.new(:admin => false)}
-    let(:backend) {Cant::Backend::Code.new}
+    let(:backend) {Cant::Backends.simple(:raise => false)}
     
     before do
       backend.can {|context| context[:url] =~ /admin/ and context[:user].admin?}
@@ -40,18 +40,18 @@ describe Cant::Backend::Code do
   end
 end
 
-describe Cant::Backend::Code::Rule do    
+describe Cant::Backends::Simple::Rule do    
   describe '#can?' do
     it 'evaluates block, yielding params' do
-      yes = Cant::Backend::Code::Rule.new {true}
+      yes = Cant::Backends::Simple::Rule.new {true}
       assert {yes.can?}
     end
     it 'return value of block' do
-      no = Cant::Backend::Code::Rule.new {false}
+      no = Cant::Backends::Simple::Rule.new {false}
       deny {no.can?}
     end
     it 'closure has instance context at hand' do
-      maybe = Cant::Backend::Code::Rule.new {|context| true if context[:eat] == :cheese}
+      maybe = Cant::Backends::Simple::Rule.new {|context| true if context[:eat] == :cheese}
       assert {maybe.can?(:eat => :cheese)}
       deny {maybe.can?(:eat => :shoe)}
     end
