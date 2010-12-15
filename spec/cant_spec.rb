@@ -1,5 +1,7 @@
 require 'spec_helper'
 require 'cant'
+require 'stunts/stunt'
+
 describe Cant::Backend::Code do
   let(:backend) {Cant::Backend::Code.new}
 
@@ -17,6 +19,23 @@ describe Cant::Backend::Code do
     it 'can do when at least one rule enables' do
       backend.can {:all}
       assert {backend.can?(:eat => :that) == true}
+    end
+  end
+  
+  # integration|value test
+  context 'with an admin and a hacker' do
+    let(:admin) {Stunt.new(:admin => true)}
+    let(:user) {Stunt.new(:admin => false)}
+    let(:backend) {Cant::Backend::Code.new}
+    
+    before do
+      backend.can {|context| context[:url] =~ /admin/ and context[:user].admin?}
+    end
+    it 'authorize admin on /admin/users' do
+      assert {backend.can?(:url => '/admin/users', :user => admin)}
+    end
+    it 'deny user on /admin/users' do
+      deny {backend.can?(:url => '/admin/users', :user => user)}
     end
   end
 end
