@@ -2,13 +2,13 @@ require 'spec_helper'
 require 'cant'
 require 'stunts/stunt'
 
-describe Cant::Backends::Simple do
-  let(:backend) {Cant::Backends.simple}
+describe Cant::Engine do
+  let(:engine) {Cant::Engine.new}
 
   context "empty, no rulez" do
     it "raises!" do
       e = rescuing {
-        backend.can?(:eat => :that)
+        engine.can?(:eat => :that)
       }
       assert {e.kind_of?(Cant::Unauthorized)}
       assert {e.message =~ /^can't you do that?/}
@@ -17,8 +17,8 @@ describe Cant::Backends::Simple do
 
   context "with one rule" do
     it 'can do when at least one rule enables' do
-      backend.can {:all}
-      assert {backend.can?(:eat => :that) == true}
+      engine.can {:all}
+      assert {engine.can?(:eat => :that) == true}
     end
   end
   
@@ -26,16 +26,17 @@ describe Cant::Backends::Simple do
   context 'with an admin and a user' do
     let(:admin) {Stunt.new(:admin => true)}
     let(:user) {Stunt.new(:admin => false)}
-    let(:backend) {Cant::Backends.simple(:raise => false)}
+    let(:engine) {Cant::Engine.new}
     
     before do
-      backend.can {|context| context[:url] =~ /admin/ and context[:user].admin?}
+      engine.can {|context| context[:url] =~ /admin/ and context[:user].admin?}
     end
     it 'authorize admin on /admin/users' do
-      assert {backend.can?(:url => '/admin/users', :user => admin)}
+      assert {engine.can?(:url => '/admin/users', :user => admin)}
     end
     it 'deny user on /admin/users' do
-      deny {backend.can?(:url => '/admin/users', :user => user)}
+      engine.raise = false
+      deny {engine.can?(:url => '/admin/users', :user => user)}
     end
   end
 end

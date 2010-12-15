@@ -3,6 +3,7 @@ module Cant
     def backend=(backend)
       @backend = backend
     end
+    
     def backend
       @backend
     end

@@ -12,5 +12,9 @@ describe Cant::Dsl do
       device.backend = :foo
       assert {device.backend == :foo}
     end
+    
+    it "provide a can method" do
+      device.can {true}
+    end
   end
 end
