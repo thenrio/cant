@@ -39,9 +39,7 @@ describe Cant::Backend::Code::Rule do
         deny {no.can?}
       end
       it 'closure has instance context at hand' do
-        maybe = Cant::Backend::Code::Rule.new(:eat => :cheese) {|context| 
-          true if context[:eat] == :cheese
-        }
+        maybe = Cant::Backend::Code::Rule.new(:eat => :cheese) {|context| true if context[:eat] == :cheese}
         assert {maybe.can?(:eat => :cheese)}
         deny {maybe.can?(:eat => :shoe)}
       end

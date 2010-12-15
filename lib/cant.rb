@@ -9,6 +9,14 @@ module Cant
       end
 
       # add a rule that when context is met, then response is what block evaluates to
+      # block can have up to two arguments
+      # - the context of invocation
+      # - the context of definition of this rule
+      # eg : 
+      #   cook.can(:rooms => [:kitchen]) {|context, restriction| 
+      #     return context[:user] and restriction[:rooms].include? context[:room]
+      #  }
+      # 
       def can(context, &block)
         rules << Rule.new(context, &block)
       end
@@ -24,9 +32,7 @@ module Cant
           @block = block
         end
         def can?(context={})
-          self.instance_eval {
-            return @block.call(context)
-          }
+          return @block.call(context, @context)
         end
       end
     end
