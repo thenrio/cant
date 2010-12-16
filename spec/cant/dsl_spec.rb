@@ -8,13 +8,13 @@ describe Cant::Dsl do
   
   context "mixed in" do
     let(:device) {o = Object.new; o.extend(Cant::Dsl); o}
-    it "provides a backend accessor" do
-      device.backend = :foo
-      assert {device.backend == :foo}
+    it "provides a cant method" do
+      assert {device.cant.is_a? Cant::Engine}
     end
-    
-    it "provide a can method" do
+
+    it "delegates can" do
       device.can {true}
+      assert {device.can?}
     end
   end
 end
