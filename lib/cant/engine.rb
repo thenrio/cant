@@ -1,10 +1,17 @@
 module Cant
+  class << self
+    attr_writer :backend
+    def backend
+      @backend ||= Backends::Simple.new
+    end
+  end 
+
   class Engine
     attr_accessor :backend
     attr_writer :raise
     
-    def initialize
-      @backend = Backends::Simple.new
+    def initialize(options={})
+      @backend = Cant.backend
       @raise = true
     end
 

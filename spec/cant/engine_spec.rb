@@ -59,3 +59,9 @@ describe Cant::Backends::Simple::Rule do
   end
 end
 
+describe Cant.backend do
+  it 'can be set' do
+    Cant.backend = :awesome
+    assert {Cant.backend == :awesome}
+  end
+end
