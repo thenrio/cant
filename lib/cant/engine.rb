@@ -1,25 +1,24 @@
 module Cant
   class << self
-    attr_writer :backend
-    def backend
-      @backend ||= nil
+    attr_writer :rules
+    def rules
+      @rules ||= []
     end
   end 
 
   class Engine
-    attr_accessor :backend
-    attr_writer :raise
-    
     def initialize(options={})
-      @backend = Cant.backend
-      @raise = true
+      self.rules.concat(Cant.rules)
+      @raising = ({:raising => true}.merge(options))[:raising]
+      @strategy = lambda {|rules, *args| Strategies.true_if_any_true(rules, *args)}
     end
 
-    # return true if any rule is true
-    # else raise Cant::Unauthorized
+    # evaluates instance rules with instance strategy
+    # return true if strategy is true
+    # else false or raise Cant::Unauthorized if raising?
     def can?(context={})
-      return true if rules.any? {|rule| rule.call(context)}
-      raise Cant::Unauthorized.new(%{can't you do that?\n#{context}}) if @raise
+      return true if @strategy.call(rules, context)
+      raise Cant::Unauthorized.new(%{can't you do that?\n#{context}}) if raising?
       false
     end
 
@@ -28,16 +27,47 @@ module Cant
     # - the context of invocation
     # eg :
     #  rooms = [:kitchen] 
-    #  backend.can {|context| rooms.include?(context[:room]) and context[:user]}
-    # 
+    #  can {|context| rooms.include?(context[:room]) and context[:user]}
+    #  can {current_user.admin?}
     def can(&block)
       rules << block
     end
 
-    private
     def rules
       @rules ||= []
-    end    
+    end
+
+    def raising(raising)
+      @raising = raising
+      self
+    end
+    
+    # will can? raise when strategy is evaled to false ?
+    def raising?
+      @raising
+    end
+    
+    # use a new strategy for can?
+    # a strategy is a function of arity 1..n
+    # - the rules to traverse
+    # - the arguments for each rule (a optionnal context)
+    # eg :
+    # strategy {false} #=> always cant
+    # strategy {|rules, context| rules.all? {|rule| rule.call(context)}}
+    def strategy(&block)
+      @strategy = block
+    end
+  end
+  
+  module Strategies
+    class << self
+      # default strategy : true if any rule evaluate to true in context
+      def true_if_any_true(rules, *args)
+        rules.any? {|rule| 
+          rule.respond_to?(:call) ? rule.call(*args) : rule
+        }
+      end
+    end
   end
   
   class Unauthorized < RuntimeError; end
