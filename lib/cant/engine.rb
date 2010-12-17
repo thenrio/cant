@@ -2,7 +2,7 @@ module Cant
   class << self
     attr_writer :backend
     def backend
-      @backend ||= Backends::Simple.new
+      @backend ||= nil
     end
   end 
 
@@ -18,7 +18,7 @@ module Cant
     # return true if any rule is true
     # else raise Cant::Unauthorized
     def can?(context={})
-      return true if rules.any? {|rule| rule.can? context}
+      return true if rules.any? {|rule| rule.call(context)}
       raise Cant::Unauthorized.new(%{can't you do that?\n#{context}}) if @raise
       false
     end
@@ -31,7 +31,7 @@ module Cant
     #  backend.can {|context| rooms.include?(context[:room]) and context[:user]}
     # 
     def can(&block)
-      rules << backend.rule(&block)
+      rules << block
     end
 
     private
@@ -39,24 +39,6 @@ module Cant
       @rules ||= []
     end    
   end
-
-  module Backends    
-    class Simple
-      def rule(&block)
-        Rule.new(&block)
-      end
-      
-      private
-      class Rule
-        def initialize(&block)
-          @block = block
-        end
-        def can?(context={})
-          return @block.call(context)
-        end
-      end
-    end
-  end
-
+  
   class Unauthorized < RuntimeError; end
 end

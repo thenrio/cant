@@ -41,24 +41,6 @@ describe Cant::Engine do
   end
 end
 
-describe Cant::Backends::Simple::Rule do    
-  describe '#can?' do
-    it 'evaluates block, yielding params' do
-      yes = Cant::Backends::Simple::Rule.new {true}
-      assert {yes.can?}
-    end
-    it 'return value of block' do
-      no = Cant::Backends::Simple::Rule.new {false}
-      deny {no.can?}
-    end
-    it 'closure has instance context at hand' do
-      maybe = Cant::Backends::Simple::Rule.new {|context| true if context[:eat] == :cheese}
-      assert {maybe.can?(:eat => :cheese)}
-      deny {maybe.can?(:eat => :shoe)}
-    end
-  end
-end
-
 describe Cant.backend do
   it 'can be set' do
     Cant.backend = :awesome
