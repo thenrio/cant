@@ -8,36 +8,30 @@ describe Cant.rules do
   end
 end
 
+describe Cant::Editable do
+  let(:set) {Object.new.extend Cant::Editable}
+  describe "#cant" do
+    it 'returns a Cant::Rule' do
+      rule = set.cant {true}
+      assert {rule.is_a? Cant::Rule}
+    end
+  end
+end
+
 describe Cant::Engine do
-  let(:engine) {Cant::Engine.new}
+  let(:engine) {Object.new.extend Cant::Engine}
 
-  describe '#raising' do
-    it 'returns self and sets @raise option' do
-      assert {engine.raising?}
-      assert {engine.raising(false) == engine}
-      deny {engine.raising?}
+  context "rules" do
+    it 'cant does not creep in module rules' do
+      engine.cant {true}
+      deny {Cant.rules.include? engine.rules.first}
     end
-  end
-
-  context "empty, no rulez" do
-    it "raises!" do
-      e = rescuing {
-        engine.can?(:eat => :that)
-      }
-      assert {e.kind_of?(Cant::Unauthorized)}
-      assert {e.message =~ /^can't you do that?/}
+    it 'has module rules first' do
+      Cant.rules << :first
+      assert {engine.rules == [:first]}
     end
-  end
-
-  context "with one rule" do
-    before do
-      engine.can {:all}
-    end
-    it 'can do when at least one rule enables' do
-      assert {engine.can?(:eat => :that) == true}
-    end
-    it 'does not creep in module rules' do
-      deny {Cant.rules.include? engine.send(:rules).first}
+    after do
+      Cant.rules.clear
     end
   end
   
@@ -45,38 +39,46 @@ describe Cant::Engine do
   context 'with an admin and a user' do
     let(:admin) {Stunt.new(:admin => true)}
     let(:user) {Stunt.new(:admin => false)}
-    let(:engine) {Cant::Engine.new}
     
     before do
-      engine.can {|context| context[:url] =~ /admin/ and context[:user].admin?}
+      engine.cant {|context| context[:url] =~ /admin/ and context[:user].admin?}
     end
     it 'authorize admin on /admin/users' do
-      assert {engine.can?(:url => '/admin/users', :user => admin)}
+      assert {engine.cant?(:url => '/admin/users', :user => admin)}
     end
     it 'deny user on /admin/users' do
-      deny {engine.raising(false).can?(:url => '/admin/users', :user => user)}
+      deny {engine.cant?(:url => '/admin/users', :user => user)}
     end
   end
   
   describe '#strategy' do
-    let(:engine) {Cant::Engine.new(:raising => false)}
     it 'accept a block, with a rules argument, that can return true or false' do
       context = true
       engine.strategy {context}
-      assert {engine.can?}
+      assert {engine.cant?}
       context = false
-      deny {engine.can?}      
+      deny {engine.cant?}
+    end
+  end
+end
+
+describe Cant::Rule do
+  let(:rule) {Cant::Rule.new}
+  describe "#respond, #respond!" do
+    it 'respond! return call of respond block' do
+      rule.respond {1}
+      assert {rule.respond! == 1}
     end
   end
 end
 
 describe Cant::Strategies do
-  describe "#true_if_any_true" do
+  describe "#respond_when_first_predicate_is_true" do
     it 'is a function returning any? on enumeration, and call on each' do
       rules = []
-      deny {Cant::Strategies.true_if_any_true([])}
-      rules << proc {true} 
-      assert {Cant::Strategies.true_if_any_true(rules)}
+      deny {Cant::Strategies.respond_when_first_predicate_is_true([])}
+      rules << Cant::Rule.new(proc {true})
+      assert {Cant::Strategies.respond_when_first_predicate_is_true(rules)}
     end
   end
 end

@@ -1,1 +1,1 @@
-require 'cant/dsl'
+require 'cant/engine'
