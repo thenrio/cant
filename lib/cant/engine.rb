@@ -53,6 +53,22 @@ module Cant
       end
       @response
     end
+    
+    # use a new strategy for cant?
+    # a strategy is a fold function of arity 1..n
+    # - the rules to traverse
+    # - the arguments for each rule (an optionnal context) to pass to predicate function
+    # 
+    # returns a rule if strategy evaluates it cant do
+    # nil | false either
+    #
+    # eg :
+    # strategy {true} #=> always cant
+    # strategy {|rules, context| rules.reverse.find {|rule| rule.predicate?(context)}}
+    def strategy(&block)
+      @strategy = block unless block.nil?
+      @strategy ||= lambda {|rules, *args| Strategies.first_rule_that_predicates(rules, *args)}
+    end
   end
   
   class << self
@@ -70,22 +86,6 @@ module Cant
     def cant!(context=nil)
       rule = cant?(context)
       rule.respond!(context) if rule
-    end
-    
-    # use a new strategy for cant?
-    # a strategy is a fold function of arity 1..n
-    # - the rules to traverse
-    # - the arguments for each rule (an optionnal context) to pass to predicate function
-    # 
-    # returns a rule if strategy evaluates it cant do
-    # nil | false either
-    #
-    # eg :
-    # strategy {true} #=> always cant
-    # strategy {|rules, context| rules.reverse.find {|rule| rule.predicate?(context)}}
-    def strategy(&block)
-      @strategy = block unless block.nil?
-      @strategy ||= lambda {|rules, *args| Strategies.first_rule_that_predicates(rules, *args)}
     end
   end
 

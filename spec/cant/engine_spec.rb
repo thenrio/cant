@@ -21,25 +21,50 @@ describe Cant::Editable do
       assert {rule.predicate == predicate}
     end
   end
+
+  describe '#strategy' do
+    context "with no args" do
+      it 'return a proc' do
+        assert {editable.strategy.is_a? Proc}
+      end
+    end
+    context 'with a block' do
+      it 'sets the strategy proc' do
+        editable.strategy {:onoes}
+        assert {editable.strategy.call == :onoes}
+      end
+    end
+  end
+  
+  describe "#respond" do
+    it 'provide default response function for this engine rules' do
+      editable.respond{:cant}
+      assert {editable.cant.response.call == :cant}
+    end
+    it "returns top level response function as a fall case" do
+      Cant.respond{2}
+      assert {editable.cant.response.call == 2}      
+    end    
+  end
+  
+  describe "rules" do
+    it 'cant does not creep in module rules' do
+      editable.cant {true}
+      deny {Cant.rules.include? editable.rules.first}
+    end
+    it 'has module rules first' do
+      Cant.rules << :first
+      assert {editable.rules == [:first]}
+    end
+    after do
+      Cant.rules.clear
+    end
+  end  
 end
 
 describe Cant::Engine do
   let(:engine) {Object.new.extend Cant::Engine}
 
-  describe "rules" do
-    it 'cant does not creep in module rules' do
-      engine.cant {true}
-      deny {Cant.rules.include? engine.rules.first}
-    end
-    it 'has module rules first' do
-      Cant.rules << :first
-      assert {engine.rules == [:first]}
-    end
-    after do
-      Cant.rules.clear
-    end
-  end
-  
   # dsl test
   describe '#cant?' do
     let(:admin) {Stunt.new(:admin => true)}
@@ -61,29 +86,6 @@ describe Cant::Engine do
       engine.cant{true}.respond{1}
       assert {engine.cant! == 1}
     end
-  end
-  
-  describe '#strategy' do
-    it 'accept a block, with a rules argument, that can return true or false' do
-      cant = true
-      engine.strategy {cant}
-      assert {engine.cant?}
-      cant = false
-      deny {engine.cant?}
-    end
-  end
-  
-  describe "#respond" do
-    it 'provide default response function for this engine rules' do
-      engine.respond{:cant}
-      engine.cant {true}
-      assert {engine.cant! == :cant}
-    end
-    it "returns top level response function as a fall case" do
-      Cant.respond{2}
-      engine.cant{true}
-      assert {engine.cant! == 2}      
-    end    
   end
 end
 
