@@ -36,13 +36,13 @@ describe Cant::Editable do
     end
   end
   
-  describe "#respond" do
+  describe "#response" do
     it 'provide default response function for this engine rules' do
-      editable.respond{:cant}
+      editable.response{:cant}
       assert {editable.cant.response.call == :cant}
     end
     it "returns top level response function as a fall case" do
-      Cant.respond{2}
+      Cant.response{2}
       assert {editable.cant.response.call == 2}      
     end    
   end
@@ -62,29 +62,29 @@ describe Cant::Editable do
   end  
 end
 
-describe Cant::Engine do
-  let(:engine) {Object.new.extend Cant::Engine}
-
-  # dsl test
+describe Cant::Questionable do
+  include Cant::Questionable
+  # query
   describe '#cant?' do
     let(:admin) {Stunt.new(:admin => true)}
     let(:user) {Stunt.new(:admin => false)}
     
     before do
-      engine.cant {|context| context[:url] =~ /admin/ and context[:user].admin?}
+      configuration.cant{|context| context[:url] =~ /admin/ and context[:user].admin?}
     end
     it 'authorize admin on /admin/users' do
-      assert {engine.cant?(:url => '/admin/users', :user => admin)}
+      assert {cant?(:url => '/admin/users', :user => admin)}
     end
     it 'deny user on /admin/users' do
-      deny {engine.cant?(:url => '/admin/users', :user => user)}
+      deny {cant?(:url => '/admin/users', :user => user)}
     end
   end
   
+  # query or die
   describe '#cant!' do
     it "return response function evaluation" do
-      engine.cant{true}.respond{1}
-      assert {engine.cant! == 1}
+      configuration.cant{true}.respond{1}
+      assert {cant! == 1}
     end
   end
 end
@@ -108,3 +108,13 @@ describe Cant::Strategies do
     end
   end
 end
+
+describe Cant::Engine do
+  let(:engine) {Cant::Engine.new}
+  it 'can be configured and queried' do
+    engine.cant{true}.respond{'hello!'}
+    assert {engine.cant?}
+    assert {engine.cant! == 'hello!'}
+  end
+end
+

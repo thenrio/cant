@@ -8,7 +8,7 @@ module Cant
       end
       @rules
     end    
-    # add a rule, as a pair of (predicate, response) functions
+    # add a rule, as a pair of functions (predicate, response)
     #
     # block form sets predicate function
     # block can have argument, as a proc
@@ -40,18 +40,12 @@ module Cant
       rules << rule
       rule
     end
-    
-    # set response function with a block
-    def respond(&block)
-      @response = block
-    end
-    # response function that defaults to Cant.response or true function as a fallback
-    def response
-      unless @response
-         @response = Cant.response unless self == Cant
-         @response ||= proc {true}
-      end
-      @response
+
+    # use response function that defaults to Cant.response if a block is given
+    # return response function or module default response function
+    def response(&block)
+      @response = block unless block.nil?
+      @response || Cant.response
     end
     
     # use a new strategy for cant?
@@ -67,19 +61,29 @@ module Cant
     # strategy {|rules, context| rules.reverse.find {|rule| rule.predicate?(context)}}
     def strategy(&block)
       @strategy = block unless block.nil?
-      @strategy ||= lambda {|rules, *args| Strategies.first_rule_that_predicates(rules, *args)}
+      @strategy || Cant.strategy
     end
   end
   
+  # module level configuration
+  # Cant.cant
+  # Cant.strategy
+  # Cant.respond
   class << self
     include Editable
-  end 
-
-  module Engine
-    include Editable
+  end
+  # module level default values
+  strategy {|rules, *args| Strategies.first_rule_that_predicates(rules, *args)}
+  response {true}
+  
+  # questionable interface
+  module Questionable
+    def configuration
+      @configuration ||= Object.new.extend(Editable)
+    end
     # return what strategy evaluates rules given context
     def cant?(context=nil)
-      strategy.call(rules, context)
+      configuration.strategy.call(configuration.rules, context)
     end
     
     # return response function of strategy evaluation
@@ -89,9 +93,21 @@ module Cant
     end
   end
 
+  # full engine
+  class Engine
+    include Editable
+    include Questionable
+    def configuration
+      self
+    end
+  end
+
   # a Rule is a pair of functions :
   # - predicate(*args), that return true if predicate is met (hint of predicate?)
   # - response(*args), that returns true or raise if convenient
+  # this class could have been:
+  # -spared
+  # -an Array, with a optional syntactic sugar
   class Rule
     # a new rule with a predicate and response function
     def initialize(predicate=nil, response=Cant.response)
