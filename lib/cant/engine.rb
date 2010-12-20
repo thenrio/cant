@@ -114,7 +114,13 @@ module Cant
       @predicate=predicate
       @die = die
     end
-    attr_reader :predicate
+    
+    # set or return predicate function using block
+    def predicate(&block)
+      @predicate = block unless block.nil?
+      @predicate
+    end
+    
     # set die function using block
     def die(&block)
       @die = block unless block.nil?
@@ -126,7 +132,7 @@ module Cant
     end
     # evaluates predicate function with args
     def predicate?(*args)
-      predicate.call(*args)
+      @predicate.call(*args)
     end
   end
   
