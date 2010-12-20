@@ -1,39 +1,57 @@
 module Cant
   module Editable
-    attr_writer :rules
     # current rules
     def rules
-      @rules ||= []
-      @rules.concat(Cant.rules) unless self == Cant
+      unless @rules
+        @rules = []
+        @rules.concat(Cant.rules) unless self == Cant
+      end
       @rules
     end    
-    # add a rule that when context is met, then response is what block evaluates to
+    # add a rule, as a pair of (predicate, response) functions
     #
-    # block can have up one argument
-    # - the context of invocation
+    # block form sets predicate function
+    # block can have argument, as a proc
+    #
     # eg :
     #  rooms = [:kitchen] 
     #  cant {|context| rooms.include?(context[:room]) and context[:user]}
     #  cant {current_user.admin?}
     #
-    # returns a rule which response which response an be configured
+    # returns a rule which response which response can be configured
+    #
     # cant do |controller|
     #   controller.request.path =~ /admin/ unless controller.current_user.admin?
     # end.respond do |controller| 
     #   raise AccessDenied.new(controller.request)
     # end
-    def cant(&block)
-      rule = Rule.new(block, self.response || Cant.response)
+    # 
+    # options form looks for the predicate and response functions as values in options, 
+    # under symbols :predicate and :response
+    # 
+    # cant :predicate => proc {|controller| not controller.current_user}, 
+    #   :response => proc {|controller| controller.redirect '/users/sign_in'}
+    def cant(options={}, &block)
+      rule = if block.nil?
+        Rule.new(options[:predicate], options[:response] || self.response)
+      else
+        Rule.new(block, self.response)
+      end
       rules << rule
       rule
     end
     
-    # default response function
+    # set response function with a block
     def respond(&block)
       @response = block
     end
+    # response function that defaults to Cant.response or true function as a fallback
     def response
-      @response || proc {true}
+      unless @response
+         @response = Cant.response unless self == Cant
+         @response ||= proc {true}
+      end
+      @response
     end
   end
   
@@ -43,35 +61,44 @@ module Cant
 
   module Engine
     include Editable
-    # evaluates instance rules with instance strategy
-    # return true if strategy is true
-    # else false or raise Cant::Unauthorized if raising?
-    def cant?(context={})
+    # return what strategy evaluates rules given context
+    def cant?(context=nil)
       strategy.call(rules, context)
     end
     
+    # return response function of strategy evaluation
+    def cant!(context=nil)
+      rule = cant?(context)
+      rule.respond!(context) if rule
+    end
+    
     # use a new strategy for cant?
-    # a strategy is a function of arity 1..n
+    # a strategy is a fold function of arity 1..n
     # - the rules to traverse
-    # - the arguments for each rule (an optionnal context)
+    # - the arguments for each rule (an optionnal context) to pass to predicate function
+    # 
+    # returns a rule if strategy evaluates it cant do
+    # nil | false either
+    #
     # eg :
     # strategy {true} #=> always cant
-    # strategy {|rules, context| rules.all? {|rule| rule.call(context)}}
+    # strategy {|rules, context| rules.reverse.find {|rule| rule.predicate?(context)}}
     def strategy(&block)
       @strategy = block unless block.nil?
-      @strategy ||= lambda {|rules, *args| Strategies.respond_when_first_predicate_is_true(rules, *args)}
+      @strategy ||= lambda {|rules, *args| Strategies.first_rule_that_predicates(rules, *args)}
     end
   end
 
   # a Rule is a pair of functions :
   # - predicate(*args), that return true if predicate is met (hint of predicate?)
-  # - response(*args), that returns a false or raise
+  # - response(*args), that returns true or raise if convenient
   class Rule
-    # a new rule with a predicate function
+    # a new rule with a predicate and response function
     def initialize(predicate=nil, response=Cant.response)
       @predicate=predicate
       @response = response
     end
+    attr_reader :predicate, :response
     # set response function using block
     def respond(&block)
       @response = block
@@ -79,21 +106,19 @@ module Cant
     end
     # call response function with args
     def respond!(*args)
-      @response.call(*args)
+      response.call(*args)
     end
     # evaluates predicate function with args
     def predicate?(*args)
-      @predicate.call(*args)
+      predicate.call(*args)
     end
   end
   
   module Strategies
     class << self
-      # default strategy : return respond! of first rule that predicates to true, false either
-      def respond_when_first_predicate_is_true(rules, *args)
-        rule = rules.find {|rule| rule.predicate?(*args)}
-        return rule.respond!(*args) if rule
-        false
+      # default strategy : first rule that predicates to true
+      def first_rule_that_predicates(rules, *args)
+        rules.find {|rule| rule.predicate?(*args)}
       end
     end
   end

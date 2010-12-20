@@ -9,11 +9,16 @@ describe Cant.rules do
 end
 
 describe Cant::Editable do
-  let(:set) {Object.new.extend Cant::Editable}
+  let(:editable) {Object.new.extend Cant::Editable}
   describe "#cant" do
     it 'returns a Cant::Rule' do
-      rule = set.cant {true}
+      rule = editable.cant {true}
       assert {rule.is_a? Cant::Rule}
+    end
+    it 'accepts an option argument, that can provide both predicate and response functions' do
+      predicate, response = proc {:predicate}, proc {:response}
+      rule = editable.cant :predicate => predicate, :response => response
+      assert {rule.predicate == predicate}
     end
   end
 end
@@ -21,7 +26,7 @@ end
 describe Cant::Engine do
   let(:engine) {Object.new.extend Cant::Engine}
 
-  context "rules" do
+  describe "rules" do
     it 'cant does not creep in module rules' do
       engine.cant {true}
       deny {Cant.rules.include? engine.rules.first}
@@ -35,8 +40,8 @@ describe Cant::Engine do
     end
   end
   
-  # integration|value test
-  context 'with an admin and a user' do
+  # dsl test
+  describe '#cant?' do
     let(:admin) {Stunt.new(:admin => true)}
     let(:user) {Stunt.new(:admin => false)}
     
@@ -51,14 +56,34 @@ describe Cant::Engine do
     end
   end
   
+  describe '#cant!' do
+    it "return response function evaluation" do
+      engine.cant{true}.respond{1}
+      assert {engine.cant! == 1}
+    end
+  end
+  
   describe '#strategy' do
     it 'accept a block, with a rules argument, that can return true or false' do
-      context = true
-      engine.strategy {context}
+      cant = true
+      engine.strategy {cant}
       assert {engine.cant?}
-      context = false
+      cant = false
       deny {engine.cant?}
     end
+  end
+  
+  describe "#respond" do
+    it 'provide default response function for this engine rules' do
+      engine.respond{:cant}
+      engine.cant {true}
+      assert {engine.cant! == :cant}
+    end
+    it "returns top level response function as a fall case" do
+      Cant.respond{2}
+      engine.cant{true}
+      assert {engine.cant! == 2}      
+    end    
   end
 end
 
@@ -73,12 +98,11 @@ describe Cant::Rule do
 end
 
 describe Cant::Strategies do
-  describe "#respond_when_first_predicate_is_true" do
-    it 'is a function returning any? on enumeration, and call on each' do
-      rules = []
-      deny {Cant::Strategies.respond_when_first_predicate_is_true([])}
-      rules << Cant::Rule.new(proc {true})
-      assert {Cant::Strategies.respond_when_first_predicate_is_true(rules)}
+  describe "#first_rule_that_predicates" do
+    it 'return first rule that cant, false either' do
+      deny {Cant::Strategies.first_rule_that_predicates([])}
+      rule = Cant::Rule.new(proc {true})
+      assert {Cant::Strategies.first_rule_that_predicates([rule]) == rule}
     end
   end
 end
