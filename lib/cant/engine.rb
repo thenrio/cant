@@ -33,22 +33,22 @@ module Cant
     #   :response => proc {|controller| controller.redirect '/users/sign_in'}
     def cant(options={}, &block)
       rule = if block.nil?
-        Rule.new(options[:predicate], options[:response] || self.response)
+        Rule.new(options[:predicate], options[:die] || self.die)
       else
-        Rule.new(block, self.response)
+        Rule.new(block, self.die)
       end
       rules << rule
       rule
     end
 
-    # use response function that defaults to Cant.response if a block is given
-    # return response function or module default response function
-    def response(&block)
-      @response = block unless block.nil?
-      @response || Cant.response
+    # block form : use provided block as die function
+    # return die function or Cant.die module function
+    def die(&block)
+      @die = block unless block.nil?
+      @die || Cant.die
     end
     
-    # use a new strategy for cant?
+    # use a new strategy for rules folding
     # a strategy is a fold function of arity 1..n
     # - the rules to traverse
     # - the arguments for each rule (an optionnal context) to pass to predicate function
@@ -74,7 +74,7 @@ module Cant
   end
   # module level default values
   strategy {|rules, *args| Strategies.first_rule_that_predicates(rules, *args)}
-  response {true}
+  die {true}
   
   # questionable interface
   module Questionable
@@ -89,7 +89,7 @@ module Cant
     # return response function of strategy evaluation
     def cant!(context=nil)
       rule = cant?(context)
-      rule.respond!(context) if rule
+      rule.die!(context) if rule
     end
   end
 
@@ -104,25 +104,25 @@ module Cant
 
   # a Rule is a pair of functions :
   # - predicate(*args), that return true if predicate is met (hint of predicate?)
-  # - response(*args), that returns true or raise if convenient
+  # - die(*args), that should return true or raise if convenient
   # this class could have been:
   # -spared
   # -an Array, with a optional syntactic sugar
   class Rule
     # a new rule with a predicate and response function
-    def initialize(predicate=nil, response=Cant.response)
+    def initialize(predicate=nil, die=Cant.die)
       @predicate=predicate
-      @response = response
+      @die = die
     end
-    attr_reader :predicate, :response
-    # set response function using block
-    def respond(&block)
-      @response = block
-      self
+    attr_reader :predicate
+    # set die function using block
+    def die(&block)
+      @die = block unless block.nil?
+      @die
     end
-    # call response function with args
-    def respond!(*args)
-      response.call(*args)
+    # call die function with args
+    def die!(*args)
+      die.call(*args)
     end
     # evaluates predicate function with args
     def predicate?(*args)

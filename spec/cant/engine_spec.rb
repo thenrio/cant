@@ -16,8 +16,8 @@ describe Cant::Editable do
       assert {rule.is_a? Cant::Rule}
     end
     it 'accepts an option argument, that can provide both predicate and response functions' do
-      predicate, response = proc {:predicate}, proc {:response}
-      rule = editable.cant :predicate => predicate, :response => response
+      predicate, die = proc {:predicate}, proc {:die}
+      rule = editable.cant :predicate => predicate, :die => die
       assert {rule.predicate == predicate}
     end
   end
@@ -36,14 +36,14 @@ describe Cant::Editable do
     end
   end
   
-  describe "#response" do
-    it 'provide default response function for this engine rules' do
-      editable.response{:cant}
-      assert {editable.cant.response.call == :cant}
+  describe "#die" do
+    it 'provide default die function for this engine rules' do
+      editable.die{:im_not_dead}
+      assert {editable.cant.die.call == :im_not_dead}
     end
     it "returns top level response function as a fall case" do
-      Cant.response{2}
-      assert {editable.cant.response.call == 2}      
+      Cant.die{2}
+      assert {editable.cant.die.call == 2}      
     end    
   end
   
@@ -82,8 +82,8 @@ describe Cant::Questionable do
   
   # query or die
   describe '#cant!' do
-    it "return response function evaluation" do
-      configuration.cant{true}.respond{1}
+    it "return die function evaluation" do
+      configuration.cant{true}.die{1}
       assert {cant! == 1}
     end
   end
@@ -91,10 +91,10 @@ end
 
 describe Cant::Rule do
   let(:rule) {Cant::Rule.new}
-  describe "#respond, #respond!" do
-    it 'respond! return call of respond block' do
-      rule.respond {1}
-      assert {rule.respond! == 1}
+  describe "#die, #die!" do
+    it 'die! return call of die block' do
+      rule.die {1}
+      assert {rule.die! == 1}
     end
   end
 end
@@ -112,7 +112,7 @@ end
 describe Cant::Engine do
   let(:engine) {Cant::Engine.new}
   it 'can be configured and queried' do
-    engine.cant{true}.respond{'hello!'}
+    engine.cant{true}.die{'hello!'}
     assert {engine.cant?}
     assert {engine.cant! == 'hello!'}
   end
