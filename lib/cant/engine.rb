@@ -26,11 +26,11 @@ module Cant
     #   raise AccessDenied.new(controller.request)
     # end
     # 
-    # options form looks for the predicate and response functions as values in options, 
-    # under symbols :predicate and :response
+    # options form looks for the predicate and die functions as values in options, 
+    # under symbols :predicate and :die
     # 
     # cant :predicate => proc {|controller| not controller.current_user}, 
-    #   :response => proc {|controller| controller.redirect '/users/sign_in'}
+    #   :die => proc {|controller| controller.redirect '/users/sign_in'}
     def cant(options={}, &block)
       rule = if block.nil?
         Rule.new(options[:predicate], options[:die] || self.die)
@@ -81,19 +81,18 @@ module Cant
     def configuration
       @configuration ||= Object.new.extend(Editable)
     end
-    # return what strategy evaluates rules given context
+    # return strategy fold for rules with context (a rule or nil)
     def cant?(context=nil)
       configuration.strategy.call(configuration.rules, context)
     end
-    
-    # return response function of strategy evaluation
+    # return evaled die function of strategy fold
     def cant!(context=nil)
       rule = cant?(context)
       rule.die!(context) if rule
     end
   end
 
-  # full engine
+  # standalone engine
   class Engine
     include Editable
     include Questionable
@@ -104,7 +103,7 @@ module Cant
 
   # a Rule is a pair of functions :
   # - predicate(*args), that return true if predicate is met (hint of predicate?)
-  # - die(*args), that should return true or raise if convenient
+  # - die(*args), that cant raise if convenient
   # this class could have been:
   # -spared
   # -an Array, with a optional syntactic sugar
@@ -114,13 +113,15 @@ module Cant
       @predicate=predicate
       @die = die
     end
-    
     # set or return predicate function using block
     def predicate(&block)
       @predicate = block unless block.nil?
       @predicate
     end
-    
+    # evaluates predicate function with args
+    def predicate?(*args)
+      predicate.call(*args)
+    end    
     # set die function using block
     def die(&block)
       @die = block unless block.nil?
@@ -129,10 +130,6 @@ module Cant
     # call die function with args
     def die!(*args)
       die.call(*args)
-    end
-    # evaluates predicate function with args
-    def predicate?(*args)
-      @predicate.call(*args)
     end
   end
   
