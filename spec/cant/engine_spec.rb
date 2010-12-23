@@ -101,10 +101,18 @@ end
 
 describe Cant::Strategies do
   describe "#first_rule_that_predicates" do
-    it 'return first rule that cant, false either' do
-      deny {Cant::Strategies.first_rule_that_predicates([])}
-      rule = Cant::Rule.new(proc {true})
-      assert {Cant::Strategies.first_rule_that_predicates([rule]) == rule}
+    it 'carries all tailing args to closure (there is a first unused one)' do
+      rule = Cant::Rule.new(proc {|x,y| x+y==10})
+      deny {Cant::Strategies.first_rule_that_predicates([rule], nil, 2, 7)}
+      assert {Cant::Strategies.first_rule_that_predicates([rule], nil, 2, 8) == rule}
+    end
+  end
+  describe "#first_rule_that_predicates_in_receiver" do
+    let(:receiver) {Stunt.new(:admin => true)}
+    it 'carry args to function evaled in receiver' do
+      rule = Cant::Rule.new(lambda {|x,y| admin? if (x+y == 2)})
+      assert {Cant::Strategies.first_rule_that_predicates_in_receiver([rule], receiver, 1, 1)}
+      assert {Cant::Strategies.first_rule_that_predicates_in_receiver([rule], receiver, 1, 1)}
     end
   end
 end
@@ -112,9 +120,9 @@ end
 describe Cant::Engine do
   let(:engine) {Cant::Engine.new}
   it 'can be configured and queried' do
-    engine.cant{true}.die{'hello!'}
-    assert {engine.cant?}
-    assert {engine.cant! == 'hello!'}
+    engine.cant{|x,y,z| x+y != z}.die{'bad arith'}
+    deny {engine.cant?(1,2,3)}
+    assert {engine.cant!(1,2,4) == 'bad arith'}
   end
 end
 

@@ -51,6 +51,7 @@ module Cant
     # use a new strategy for rules folding
     # a strategy is a fold function of arity 1..n
     # - the rules to traverse
+    # - a receiver
     # - the arguments for each rule (an optionnal context) to pass to predicate function
     # 
     # returns a rule if strategy evaluates it cant do
@@ -68,12 +69,12 @@ module Cant
   # module level configuration
   # Cant.cant
   # Cant.strategy
-  # Cant.respond
+  # Cant.die
   class << self
     include Editable
   end
   # module level default values
-  strategy {|rules, *args| Strategies.first_rule_that_predicates(rules, *args)}
+  strategy {|rules, receiver, *args| Strategies.first_rule_that_predicates(rules, receiver, *args)}
   die {true}
   
   # questionable interface
@@ -82,13 +83,13 @@ module Cant
       @configuration ||= Object.new.extend(Editable)
     end
     # return strategy fold for rules with context (a rule or nil)
-    def cant?(context=nil)
-      configuration.strategy.call(configuration.rules, context)
+    def cant?(*args)
+      configuration.strategy.call(configuration.rules, self, *args)
     end
     # return evaled die function of strategy fold
-    def cant!(context=nil)
-      rule = cant?(context)
-      rule.die!(context) if rule
+    def cant!(*args)
+      rule = cant?(*args)
+      rule.die!(*args) if rule
     end
   end
 
@@ -135,9 +136,17 @@ module Cant
   
   module Strategies
     class << self
-      # default strategy : first rule that predicates to true
-      def first_rule_that_predicates(rules, *args)
+      # first rule that predicates to true, all args are carried to closure
+      # binding of closure might not be related to receiver
+      def first_rule_that_predicates(rules, _receiver=nil, *args)
         rules.find {|rule| rule.predicate?(*args)}
+      end
+      # strategy that evals block with in receiver context
+      # that is closure is rebound to receiver (acting like a function)
+      def first_rule_that_predicates_in_receiver(rules, receiver, *args)
+        rules.find do |rule|
+          receiver.instance_exec(*args, &(rule.predicate))
+        end
       end
     end
   end
