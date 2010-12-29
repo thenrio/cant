@@ -87,7 +87,7 @@ module Cant
       configuration.strategy.call(configuration.rules, self, *args)
     end
     # return evaled die function of strategy fold
-    def cant!(*args)
+    def die_if_cant!(*args)
       rule = cant?(*args)
       rule.die!(*args) if rule
     end

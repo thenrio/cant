@@ -84,7 +84,7 @@ describe Cant::Questionable do
   describe '#cant!' do
     it "return die function evaluation" do
       configuration.cant{true}.die{1}
-      assert {cant! == 1}
+      assert {die_if_cant! == 1}
     end
   end
 end
@@ -122,7 +122,7 @@ describe Cant::Engine do
   it 'can be configured and queried' do
     engine.cant{|x,y,z| x+y != z}.die{'bad arith'}
     deny {engine.cant?(1,2,3)}
-    assert {engine.cant!(1,2,4) == 'bad arith'}
+    assert {engine.die_if_cant!(1,2,4) == 'bad arith'}
   end
 end
 
@@ -135,6 +135,6 @@ describe Cant::Embedable do
   let(:foo) {Foo.new}
   it 'can configured at class level, and be queried at instance level' do
     deny {foo.cant?(9)}
-    assert {rescuing{foo.cant!(10)}.is_a? Cant::AccessDenied}
+    assert {rescuing{foo.die_if_cant!(10)}.is_a? Cant::AccessDenied}
   end
 end
