@@ -151,5 +151,22 @@ module Cant
     end
   end
   
-  class Unauthorized < RuntimeError; end
+  module Embedable
+    def self.included(base)
+      base.module_eval do
+        extend Cant::Editable
+        strategy do |rules, receiver, *args|
+          Strategies.first_rule_that_predicates_in_receiver(rules, receiver, *args)
+        end
+        die {raise AccessDenied}
+
+        def configuration
+          self.class
+        end
+      end
+    end
+    include Cant::Questionable
+  end
+  
+  class AccessDenied < RuntimeError; end
 end

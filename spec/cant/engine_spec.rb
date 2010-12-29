@@ -126,3 +126,15 @@ describe Cant::Engine do
   end
 end
 
+describe Cant::Embedable do
+  class Foo
+    def foo?; true; end
+    include Cant::Embedable
+    cant {|x| 9<x if foo?}
+  end
+  let(:foo) {Foo.new}
+  it 'can configured at class level, and be queried at instance level' do
+    deny {foo.cant?(9)}
+    assert {rescuing{foo.cant!(10)}.is_a? Cant::AccessDenied}
+  end
+end
