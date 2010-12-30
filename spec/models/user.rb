@@ -1,12 +1,8 @@
-require 'cant/engine'
+require 'cant/embeddable'
 
 class User
   attr_accessor :admin
   alias_method :admin?, :admin
 
-  extend Cant::Editable
-  include Cant::Questionable
-  def configuration
-    self.class
-  end
+  include Cant::Embeddable
 end

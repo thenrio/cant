@@ -79,12 +79,12 @@ module Cant
   
   # questionable interface
   module Questionable
-    def configuration
-      @configuration ||= Object.new.extend(Editable)
+    def cantfiguration
+      @cantfiguration ||= Object.new.extend(Editable)
     end
     # return strategy fold for rules with context (a rule or nil)
     def cant?(*args)
-      configuration.strategy.call(configuration.rules, self, *args)
+      cantfiguration.strategy.call(cantfiguration.rules, self, *args)
     end
     # return evaled die function of strategy fold
     def die_if_cant!(*args)
@@ -97,7 +97,7 @@ module Cant
   class Engine
     include Editable
     include Questionable
-    def configuration
+    def cantfiguration
       self
     end
   end
@@ -150,23 +150,6 @@ module Cant
       end
     end
   end
-  
-  module Embedable
-    def self.included(base)
-      base.module_eval do
-        extend Cant::Editable
-        strategy do |rules, receiver, *args|
-          Strategies.first_rule_that_predicates_in_receiver(rules, receiver, *args)
-        end
-        die {raise AccessDenied}
-
-        def configuration
-          self.class
-        end
-      end
-    end
-    include Cant::Questionable
-  end
-  
+    
   class AccessDenied < RuntimeError; end
 end

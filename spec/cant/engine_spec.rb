@@ -70,7 +70,7 @@ describe Cant::Questionable do
     let(:user) {Stunt.new(:admin => false)}
     
     before do
-      configuration.cant{|context| context[:url] =~ /admin/ and context[:user].admin?}
+      cantfiguration.cant{|context| context[:url] =~ /admin/ and context[:user].admin?}
     end
     it 'authorize admin on /admin/users' do
       assert {cant?(:url => '/admin/users', :user => admin)}
@@ -83,7 +83,7 @@ describe Cant::Questionable do
   # query or die
   describe '#cant!' do
     it "return die function evaluation" do
-      configuration.cant{true}.die{1}
+      cantfiguration.cant{true}.die{1}
       assert {die_if_cant! == 1}
     end
   end
@@ -123,18 +123,5 @@ describe Cant::Engine do
     engine.cant{|x,y,z| x+y != z}.die{'bad arith'}
     deny {engine.cant?(1,2,3)}
     assert {engine.die_if_cant!(1,2,4) == 'bad arith'}
-  end
-end
-
-describe Cant::Embedable do
-  class Foo
-    def foo?; true; end
-    include Cant::Embedable
-    cant {|x| 9<x if foo?}
-  end
-  let(:foo) {Foo.new}
-  it 'can configured at class level, and be queried at instance level' do
-    deny {foo.cant?(9)}
-    assert {rescuing{foo.die_if_cant!(10)}.is_a? Cant::AccessDenied}
   end
 end
