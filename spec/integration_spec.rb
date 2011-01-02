@@ -3,9 +3,6 @@ require 'models/user'
 
 describe User do
   before do
-    User.strategy do |rules, receiver, env|
-      Cant::Strategies.first_rule_that_predicates_in_receiver(rules, receiver, env)
-    end
     User.cant do |env|
       env[:path] =~ /^\/admin/ unless admin?
     end

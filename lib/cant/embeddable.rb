@@ -16,8 +16,8 @@ module Cant
     class << self
       def included(base)
         base.extend Cant::Editable
-        base.strategy do |rules, receiver, *args|
-          Strategies.first_rule_that_predicates_in_receiver(rules, receiver, *args)
+        base.fold do |rules, receiver, *args|
+          Folds.first_rule_that_predicates_in_receiver(rules, receiver, *args)
         end
         base.die {raise AccessDenied}
         
@@ -26,7 +26,7 @@ module Cant
         class << base
           def inherited(subclass)
             subclass.rules.concat(rules)
-            [:strategy, :die].each do |attr|
+            [:die, :fold].each do |attr|
               subclass.send(attr, &(send(attr)))
             end
             super

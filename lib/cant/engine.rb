@@ -1,6 +1,6 @@
 module Cant
   module Editable
-    # current rules
+    # list of Rules
     def rules
       unless @rules
         @rules = []
@@ -8,10 +8,10 @@ module Cant
       end
       @rules
     end    
-    # add a rule, as a pair of functions (predicate, response)
+    # add a Rule, as a pair of functions {predicate, die}
     #
-    # block form sets predicate function
-    # block can have argument, as a proc
+    # block form sets predicate function.
+    # block can have argument, (as any proc)
     #
     # eg :
     #  rooms = [:kitchen] 
@@ -20,11 +20,11 @@ module Cant
     #
     # returns a rule which response which response can be configured
     #
-    # cant do |controller|
-    #   controller.request.path =~ /admin/ unless controller.current_user.admin?
-    # end.respond do |controller| 
-    #   raise AccessDenied.new(controller.request)
-    # end
+    #   cant do |controller|
+    #     controller.request.path =~ /admin/ unless controller.current_user.admin?
+    #   end.respond do |controller| 
+    #     raise AccessDenied.new(controller.request)
+    #   end
     # 
     # options form looks for the predicate and die functions as values in options, 
     # under symbols :predicate and :die
@@ -48,7 +48,7 @@ module Cant
       @die || Cant.die
     end
     
-    # use a new strategy for rules folding
+    # use a new fold function
     # a strategy is a fold function of arity 1..n
     # - the rules to traverse
     # - a receiver
@@ -58,24 +58,23 @@ module Cant
     # nil | false either
     #
     # eg :
-    # strategy {true} #=> always cant
-    # strategy {|rules, context| rules.reverse.find {|rule| rule.predicate?(context)}}
-    def strategy(&block)
-      @strategy = block unless block.nil?
-      @strategy || Cant.strategy
+    #   strategy {true} #=> always cant
+    #   strategy {|rules, context| rules.reverse.find {|rule| rule.predicate?(context)}}
+    def fold(&block)
+      @fold = block unless block.nil?
+      @fold || Cant.fold
     end
   end
   
   # module level configuration
-  # Cant.cant
-  # Cant.strategy
-  # Cant.die
+  #   Cant.fold
+  #   Cant.die
   class << self
     include Editable
   end
   # module level default values
-  strategy {|rules, receiver, *args| Strategies.first_rule_that_predicates(rules, receiver, *args)}
-  die {true}
+  fold {|rules, receiver, *args| Folds.first_rule_that_predicates_in_receiver(rules, receiver, *args)}
+  die {|*args| raise AccessDenied, "Cant you do that #{args}, can you ??"}
   
   # questionable interface
   module Questionable
@@ -84,7 +83,7 @@ module Cant
     end
     # return strategy fold for rules with context (a rule or nil)
     def cant?(*args)
-      cantfiguration.strategy.call(cantfiguration.rules, self, *args)
+      cantfiguration.fold.call(cantfiguration.rules, self, *args)
     end
     # return evaled die function of strategy fold
     def die_if_cant!(*args)
@@ -134,7 +133,7 @@ module Cant
     end
   end
   
-  module Strategies
+  module Folds
     class << self
       # first rule that predicates to true, all args are carried to closure
       # binding of closure might not be related to receiver

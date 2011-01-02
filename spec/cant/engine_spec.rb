@@ -2,11 +2,25 @@ require 'spec_helper'
 require 'cant'
 require 'stunts/stunt'
 
-describe Cant.rules do
-  it 'can be read, and respond to each' do
+describe Cant do
+  it 'has fold default value to first_rule_that_predicates_in_receiver' do
+    Cant.cant {|x| include? x}
+    a = [1]
+    assert {Cant.fold.call(Cant.rules, a, 1)}
+  end
+  it 'has a raising die function' do
+    e = rescuing {Cant.die.call(:do, :that)}
+    assert {e.is_a? Cant::AccessDenied}
+    assert {e.message =~ /^Cant you do that.*\?$/}
+  end
+  it 'rules is enumerable' do
     assert {Cant.rules.respond_to? :each}
   end
+  after do
+    Cant.rules.clear
+  end
 end
+
 
 describe Cant::Editable do
   let(:editable) {Object.new.extend Cant::Editable}
@@ -22,29 +36,31 @@ describe Cant::Editable do
     end
   end
 
-  describe '#strategy' do
-    context "with no args" do
-      it 'return a proc' do
-        assert {editable.strategy.is_a? Proc}
-      end
-    end
+  describe '#fold' do
     context 'with a block' do
-      it 'sets the strategy proc' do
-        editable.strategy {:onoes}
-        assert {editable.strategy.call == :onoes}
+      it 'sets the fold proc' do
+        editable.fold {:onoes}
+        assert {editable.fold.call == :onoes}
       end
     end
   end
   
   describe "#die" do
+    before do
+      # XXX preserving default value for class instance variable
+      @proc=Cant.instance_variable_get(:@die)
+      Cant.die{2}
+    end
     it 'provide default die function for this engine rules' do
       editable.die{:im_not_dead}
       assert {editable.cant.die.call == :im_not_dead}
     end
     it "returns top level response function as a fall case" do
-      Cant.die{2}
       assert {editable.cant.die.call == 2}      
-    end    
+    end
+    after do
+      Cant.instance_variable_set(:@die, @proc)
+    end  
   end
   
   describe "rules" do
@@ -81,7 +97,7 @@ describe Cant::Questionable do
   end
   
   # query or die
-  describe '#cant!' do
+  describe '#die_if_cant!' do
     it "return die function evaluation" do
       cantfiguration.cant{true}.die{1}
       assert {die_if_cant! == 1}
@@ -99,20 +115,20 @@ describe Cant::Rule do
   end
 end
 
-describe Cant::Strategies do
+describe Cant::Folds do
   describe "#first_rule_that_predicates" do
     it 'carries all tailing args to closure (there is a first unused one)' do
       rule = Cant::Rule.new(proc {|x,y| x+y==10})
-      deny {Cant::Strategies.first_rule_that_predicates([rule], nil, 2, 7)}
-      assert {Cant::Strategies.first_rule_that_predicates([rule], nil, 2, 8) == rule}
+      deny {Cant::Folds.first_rule_that_predicates([rule], nil, 2, 7)}
+      assert {Cant::Folds.first_rule_that_predicates([rule], nil, 2, 8) == rule}
     end
   end
   describe "#first_rule_that_predicates_in_receiver" do
     let(:receiver) {Stunt.new(:admin => true)}
     it 'carry args to function evaled in receiver' do
       rule = Cant::Rule.new(lambda {|x,y| admin? if (x+y == 2)})
-      assert {Cant::Strategies.first_rule_that_predicates_in_receiver([rule], receiver, 1, 1)}
-      assert {Cant::Strategies.first_rule_that_predicates_in_receiver([rule], receiver, 1, 1)}
+      assert {Cant::Folds.first_rule_that_predicates_in_receiver([rule], receiver, 1, 1)}
+      assert {Cant::Folds.first_rule_that_predicates_in_receiver([rule], receiver, 1, 1)}
     end
   end
 end
