@@ -78,6 +78,7 @@ module Cant
   
   # questionable interface
   module Questionable
+    attr_writer :cantfiguration
     def cantfiguration
       @cantfiguration ||= Object.new.extend(Editable)
     end

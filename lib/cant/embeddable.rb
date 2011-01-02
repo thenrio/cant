@@ -16,10 +16,6 @@ module Cant
     class << self
       def included(base)
         base.extend Cant::Editable
-        base.fold do |rules, receiver, *args|
-          Folds.first_rule_that_predicates_in_receiver(rules, receiver, *args)
-        end
-        base.die {raise AccessDenied}
         
         # XXX this sucks if class defines its own inherited callback and includes Cant::Embeddable
         # double evil : order of inherited and extend statement has an effect : latter overwrite earlier !!!

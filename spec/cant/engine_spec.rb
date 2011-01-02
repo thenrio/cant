@@ -103,6 +103,11 @@ describe Cant::Questionable do
       assert {die_if_cant! == 1}
     end
   end
+  
+  it 'cant be given a cantfiguration' do
+    self.cantfiguration = 1
+    assert{cantfiguration == 1}
+  end
 end
 
 describe Cant::Rule do
