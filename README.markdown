@@ -47,15 +47,11 @@ Cant is a reduce (or [fold](http://learnyousomeerlang.com/higher-order-functions
 How do I define a list of rules ?
 =================================
 
-First, choose where you want to define your list, and what information they will need
+First, choose where you want to define your list, and what information a Rule will need
 
-This can be any existing class, or a new one  
+The point of cant is to define a lists of similar rules together, so that they will require similar informations
 
-* a model (User, ...)
-* a controller
-* a middleware
-
-Cant::Embeddable mixin propose to
+A list of rules can be embedded in an existing class using Cant::Embeddable mixin
 
 * define rule and functions at class level
 * evaluate predicates at instance level
@@ -144,9 +140,7 @@ Examples
         
         deny {cant? request}
 
-So you have choice to pick your own semantic and specification for writing your rules
-
-One list of rules can have its own list of parameters
+So you can pick your own semantic and specification for writing your rules
 
 How do I verify authorization ?
 ===============================
