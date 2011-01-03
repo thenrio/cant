@@ -31,8 +31,13 @@ Gem::Specification.new do |s|
     ------
         user.cant? :update, post
         user.die_if_cant! :update, post
-        
-        response.code=401 and return response if cant? env
+
+    control
+    -------
+        rescue_from Cant::AccessDenied do |error|
+         flash[:error] = error.message
+         redirect_to request.referer
+        end
     }
 
   s.rubyforge_project = "cant"

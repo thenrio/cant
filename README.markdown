@@ -5,14 +5,72 @@ Lightweight authorization library, that let you choose where and how you write y
 
 Cant is agnostic : you can use it in any existing or future framework, provided names don't clash
 
-Cant is small and even simple
+Cant is small and even simple : it is 120 lines of code, has no dependencies but for testing
 
 Cant can be configured at class level, and support basic configuration inheritance
+
+
+What does it look like ?
+========================
+
+Examples
+--------
+
+* in an existing model
+
+        class User
+          include Cant::Embeddable
+      
+          cant do |action, code|
+            (action == :post and Code === code) if drunken?
+          end
+        end
+
+        deny {bob.cant? :post, kata}
+
+* in a separate model
+        
+        class Permission
+          include Cant::Embeddable
+      
+          cant do |user, action, resource|
+            (action == :post and Code === resource) if user.drunken?
+          end
+        end
+
+        assert {permission.cant? jackie, :post, kata}        
+
+* in a rails controller
+
+        class ApplicationController < ActionController::Base
+          include Cant::Embeddable
+          alias_method :authorize_user!, :die_if_cant!
+          helper_method :cant?
+          
+          rescue_from Cant::AccessDenied do |error|
+            flash[:error] = error.message
+            redirect_to request.referer
+          end
+        end
+        
+        class KatasController < ApplicationController
+          before_filter :authenticate_user!, :authorize_user!
+      
+          cant do |request|
+            current_user.drunken? if request.method == 'POST'
+          end
+        end
+        
+* in a rack middleware ... I have not experimented yet ...
+  
+  breaking authorization into small independent pieces is valuable, and you do not need a library for that, though using Cant::Editable and Cant::Questionable mixins can help you do that
+  
+        
 
 Concepts
 ========
 
-Cant is a reduce (or [fold](http://learnyousomeerlang.com/higher-order-functions)) on a list of Rules.
+Cant is simply put a reduce (or [fold](http://learnyousomeerlang.com/higher-order-functions)) on a list of Rules.
 
 * __Rule__ 
 
@@ -44,8 +102,8 @@ Cant is a reduce (or [fold](http://learnyousomeerlang.com/higher-order-functions
 
   calls fold function to operate on __rules__, and calls die function on result
 
-How do I define a list of rules ?
-=================================
+How do I define rules ?
+=======================
 
 First, choose where you want to define your list, and what information a Rule will need
 
@@ -88,59 +146,19 @@ There are a couple of things to drive your choice :
 
 * params of __cant?__ are passed to __predicate__
 
-* params of __die\_if\_cant!__ are passed to __predicate__ and __die!__
+* params of __die\_if\_cant!__ are passed to __predicate__ and __die__
 
 * number and order of params of in a rule list should be the same
 
 * the context of predicate evaluation (that is defined in fold function)
   the receiver methods will be available in function
   
-* a container can be a handy parameter
+* a container can be a handy parameter (Hash)
   _env_, _params_
   
 * a block is a proc, and can use default values for params
 
-Examples
---------
-
-* in an existing model
-
-        class User
-          include Cant::Embeddable
-      
-          cant do |action, code|
-            (action == :post and Code === code) if drunken?
-          end
-        end
-
-        deny {bob.cant? :post, kata}
-
-* in a separate model
-        
-        class Permission
-          include Cant::Embeddable
-      
-          cant do |user, action, resource|
-            (action == :post and Code === resource) if user.drunken?
-          end
-        end
-
-        assert {permission.cant? jackie, :post, kata}        
-
-* in a rails controller or a rack middleware
-      
-        class KatasController < ApplicationController
-          include Cant::Embeddable
-          before_filter :authenticate_user!, :authorize_user!
-      
-          cant do |request|
-            current_user.drunken? if request.method == 'POST'
-          end
-        end
-        
-        deny {cant? request}
-
-So you can pick your own semantic and specification for writing your rules
+So pick your own semantic, or grow an existing one
 
 How do I verify authorization ?
 ===============================
@@ -164,18 +182,23 @@ Inspired from
 
 * [Howard](http://rubyquiz.com/quiz67.html) and [Nunemaker](http://railstips.org/blog/archives/2006/11/18/class-and-instance-variables-in-ruby/) for inheritable class instance variables
 
+
 Does it work ?
 ==============
 
 specs are green on mri : [1.9.2-p0, 1.8.7-p302]
 
-C0 coverage is acceptable under ruby-1.9.2-p0
+C0 coverage is acceptable under ruby-1.9.2-p0 (100% is acceptable for this kind of code)
+
+There is few lines of code as concept is simple : fold a list of functions...
+Though, we can make it better and lesser, cant we ?
+
 
 Help|Contribute
 ===============
 
 Fill an item in tracker
 
-Add a wiki page
+Add a page on wiki
 
-Add a spec, and open a pull request on topic branch, commit granted on first accepted patch|pull
+Add a spec, open a pull request on topic branch, commit granted on first accepted patch|pull
