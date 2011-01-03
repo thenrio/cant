@@ -5,7 +5,7 @@ Lightweight authorization library, that let you choose where and how you write y
 
 Cant is agnostic : you can use it in any existing or future framework, provided names don't clash
 
-Cant is simple and small
+Cant is small and even simple
 
 Cant can be configured at class level, and support basic configuration inheritance
 
@@ -107,7 +107,7 @@ There are a couple of things to drive your choice :
 Examples
 --------
 
-* in a model
+* in an existing model
 
         class User
           include Cant::Embeddable
@@ -119,29 +119,47 @@ Examples
 
         assert {bob.cant? :post, kata}
 
-* in a rails controller
+* in a separate model
+        
+        class Permission
+          include Cant::Embeddable
       
-        class AdminController < ApplicationController
+          cant do |user, action, resource|
+            (action == :post and Code === resource) if user.drunk?
+          end
+        end
+
+        assert {permission.cant? bob, :post, kata}        
+
+* in a controller
+      
+        class KatasController < ApplicationController
           include Cant::Embeddable
           before_filter :authenticate_user!, :authorize_user!
       
           cant do |request|
-            not (current_user.admin? or request.method == 'POST')
+            current_user.drunken? if request.method == 'POST'
           end
         end
         
         deny {cant? request}
 
+So you have choice to pick your own semantic and specification for writing your rules
+
+One list of rules can have its own list of parameters
+
 How do I verify authorization ?
 ===============================
 
-Cant very meaning takes a black list approach : you can unless you cant, and you define what you cant
+Cant very meaning is : you can unless you cant, and you define what you cant
 
 Defining _not_ or _negative_ ability require some thinking, and I believe we can do it :)
 
 Use __cant?__ method to check
 
 Use __die\_if\_cant!__ method to check and run __die__ code
+
+When you check, provide the list of parameters you specified in your list of rules
 
 Inspired from
 =============

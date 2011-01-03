@@ -1,6 +1,7 @@
 module Cant
   module Editable
     # list of Rules
+    # returns the list of rules for this device
     def rules
       unless @rules
         @rules = []
@@ -18,11 +19,11 @@ module Cant
     #  cant {|context| rooms.include?(context[:room]) and context[:user]}
     #  cant {current_user.admin?}
     #
-    # returns a rule which response which response can be configured
+    # returns a rule which die function can be configured
     #
     #   cant do |controller|
     #     controller.request.path =~ /admin/ unless controller.current_user.admin?
-    #   end.respond do |controller| 
+    #   end.die do |controller| 
     #     raise AccessDenied.new(controller.request)
     #   end
     # 
@@ -41,25 +42,29 @@ module Cant
       rule
     end
 
-    # block form : use provided block as die function
-    # return die function or Cant.die module function
+    # set default die function for this device
+    #
+    # example : 
+    #   die do |request|
+    #     raise AccessDenied, "Cant process #{request}"
+    #   end
     def die(&block)
       @die = block unless block.nil?
       @die || Cant.die
     end
     
-    # use a new fold function
-    # a strategy is a fold function of arity 1..n
-    # - the rules to traverse
-    # - a receiver
-    # - the arguments for each rule (an optionnal context) to pass to predicate function
+    # define fold function
+    # fold function has arity 2..n
+    # - rules : the rules to traverse
+    # - receiver : a Questionable asking for cant?
+    # - *args : the arguments for each rule to pass to predicate functions
     # 
     # returns a rule if strategy evaluates it cant do
-    # nil | false either
+    # nil either
     #
     # eg :
-    #   strategy {true} #=> always cant
-    #   strategy {|rules, context| rules.reverse.find {|rule| rule.predicate?(context)}}
+    #   fold {true} #=> always cant
+    #   fold {|rules, _receiver, context| rules.reverse.find {|rule| rule.predicate?(context)}}
     def fold(&block)
       @fold = block unless block.nil?
       @fold || Cant.fold
@@ -105,9 +110,10 @@ module Cant
   # a Rule is a pair of functions :
   # - predicate(*args), that return true if predicate is met (hint of predicate?)
   # - die(*args), that cant raise if convenient
+  #
   # this class could have been:
   # -spared
-  # -an Array, with a optional syntactic sugar
+  # -an Array, with an optional syntactic sugar
   class Rule
     # a new rule with a predicate and response function
     def initialize(predicate=nil, die=Cant.die)
@@ -115,6 +121,13 @@ module Cant
       @die = die
     end
     # set or return predicate function using block
+    # 
+    # return true means rule can die
+    #
+    # example : 
+    #   predicate do |request|
+    #     not current_user.admin? if request.path =~ /^\/admin/ 
+    #   end    
     def predicate(&block)
       @predicate = block unless block.nil?
       @predicate
@@ -124,11 +137,18 @@ module Cant
       predicate.call(*args)
     end    
     # set die function using block
+    #
+    # example : 
+    #   die do |request|
+    #     raise AccessDenied, "Cant process #{request}"
+    #   end
     def die(&block)
       @die = block unless block.nil?
       @die
     end
     # call die function with args
+    # 
+    # *args - variable list of arguments
     def die!(*args)
       die.call(*args)
     end
@@ -137,12 +157,12 @@ module Cant
   module Folds
     class << self
       # first rule that predicates to true, all args are carried to closure
-      # binding of closure might not be related to receiver
-      def first_rule_that_predicates(rules, _receiver=nil, *args)
+      # this strategy does not use the receiver argument, and evaluate each predicate with the binding of its creation
+      def first_rule_that_predicates(rules, _receiver, *args)
         rules.find {|rule| rule.predicate?(*args)}
       end
-      # strategy that evals block with in receiver context
-      # that is closure is rebound to receiver (acting like a function)
+      # strategy that evals block in receiver context
+      # closure is rebound to receiver (acting as a function)
       def first_rule_that_predicates_in_receiver(rules, receiver, *args)
         rules.find do |rule|
           receiver.instance_exec(*args, &(rule.predicate))
