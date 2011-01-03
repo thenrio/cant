@@ -9,19 +9,30 @@ Gem::Specification.new do |s|
   s.authors     = ["thierry.henrio"]
   s.email       = ["thierry.henrio@gmail.com"]
   s.homepage    = "https://github.com/thierryhenrio"
-  s.summary     = %q{tiny authorization module, declarative dsl}
+  s.summary     = %q{Tiny authorization library, let you craft your own rules}
   s.description = %q{
-    extend Cant
-    -----------
-        self.extend(Cant).use_backend(backend)
+    include Cant
+    ------------
+        class User; include Cant::Embeddable; end
         
-    declare rules in backend
-    ------------------------
-        can {|request| request.url =~ /admin/ and current_user.admin?}
+        class AuthorizationMiddleware; include Cant::Embeddable; end
+        
+    declare rules
+    -------------
+        User.cant do |action=:update, post|
+          not post.user == self if Post === resource and action == :update
+        end
+        
+        AuthorizationMiddleware.cant do |env|
+          not env['user'] == env['post'].user if env.path =~ /^\posts/ and env.method == 'PUT'
+        end
         
     verify
     ------
-        can? request
+        user.cant? :update, post
+        user.die_if_cant! :update, post
+        
+        response.code=401 and return response if cant? env
     }
 
   s.rubyforge_project = "cant"

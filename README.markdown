@@ -108,12 +108,12 @@ Examples
         class User
           include Cant::Embeddable
       
-          cant do |action, resource|
-            (action == :post and Code === resource) if drunk?
+          cant do |action, code|
+            (action == :post and Code === code) if drunken?
           end
         end
 
-        assert {bob.cant? :post, kata}
+        deny {bob.cant? :post, kata}
 
 * in a separate model
         
@@ -121,13 +121,13 @@ Examples
           include Cant::Embeddable
       
           cant do |user, action, resource|
-            (action == :post and Code === resource) if user.drunk?
+            (action == :post and Code === resource) if user.drunken?
           end
         end
 
-        assert {permission.cant? bob, :post, kata}        
+        assert {permission.cant? jackie, :post, kata}        
 
-* in a controller
+* in a rails controller or a rack middleware
       
         class KatasController < ApplicationController
           include Cant::Embeddable
@@ -164,9 +164,18 @@ Inspired from
 
 * [Howard](http://rubyquiz.com/quiz67.html) and [Nunemaker](http://railstips.org/blog/archives/2006/11/18/class-and-instance-variables-in-ruby/) for inheritable class instance variables
 
+Does it work ?
+==============
+
+specs are green on mri : [1.9.2-p0, 1.8.7-p302]
+
+C0 coverage is acceptable under ruby-1.9.2-p0
+
 Help|Contribute
 ===============
 
 Fill an item in tracker
 
-Add a spec, and open a pull request with topic branch
+Add a wiki page
+
+Add a spec, and open a pull request on topic branch, commit granted on first accepted patch|pull
