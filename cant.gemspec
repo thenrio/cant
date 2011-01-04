@@ -10,35 +10,7 @@ Gem::Specification.new do |s|
   s.email       = ["thierry.henrio@gmail.com"]
   s.homepage    = "https://github.com/thierryhenrio"
   s.summary     = %q{Tiny authorization library, let you craft your own rules}
-  s.description = %q{
-    include Cant
-    ------------
-        class User; include Cant::Embeddable; end
-        
-        class AuthorizationMiddleware; include Cant::Embeddable; end
-        
-    declare rules
-    -------------
-        User.cant do |action=:update, post|
-          not post.user == self if Post === resource and action == :update
-        end
-        
-        AuthorizationMiddleware.cant do |env|
-          not env['user'] == env['post'].user if env.path =~ /^\posts/ and env.method == 'PUT'
-        end
-        
-    verify
-    ------
-        user.cant? :update, post
-        user.die_if_cant! :update, post
-
-    control
-    -------
-        rescue_from Cant::AccessDenied do |error|
-         flash[:error] = error.message
-         redirect_to request.referer
-        end
-    }
+  s.description = %q{Use blocks to define what you cant do, define or reuse an existing fold function, and you are done ... As a side effect, it can be embedded where you need it}
 
   s.rubyforge_project = "cant"
 
@@ -47,6 +19,6 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
   
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'wrong'
+  s.add_development_dependency 'rspec', '~> 2'
+  s.add_development_dependency 'wrong', '>= 0.4'
 end
