@@ -1,21 +1,15 @@
 Intent
 ======
-
 Lightweight authorization library, that let you choose where and how you write your rules
 
-Cant is agnostic : you can use it in any existing or future framework, provided names don't clash
+Cant is simple : you can use it in any existing or future framework (provided names don't clash)
 
-Cant is small and even simple : it is 120 lines of code, has no dependencies but for testing
+Cant is small : around 120 lines of code, has no dependencies but for testing
 
 Cant can be configured at class level, and support basic configuration inheritance
 
-
 What does it look like ?
 ========================
-
-Examples
---------
-
 * in an existing model
 
         class User
@@ -64,17 +58,15 @@ Examples
 * in a rack middleware ... I have not experimented yet ...
   
   breaking authorization into small independent pieces is valuable, and you do not need a library for that, though using Cant::Editable and Cant::Questionable mixins can help you do that
-  
-        
+
 
 Concepts
 ========
-
 Cant is simply put a reduce (or [fold](http://learnyousomeerlang.com/higher-order-functions)) on a list of Rules.
 
 * __Rule__ 
 
-  a tuple of functions {__predicate__, __die__}.
+  a tuple of functions __predicate__, __die__
   
 * __rules__
 
@@ -104,7 +96,6 @@ Cant is simply put a reduce (or [fold](http://learnyousomeerlang.com/higher-orde
 
 How do I define rules ?
 =======================
-
 First, choose where you want to define your list, and what information a Rule will need
 
 The point of cant is to define a lists of similar rules together, so that they will require similar informations
@@ -118,16 +109,14 @@ Then there is one list of rules for any instance of this class, and instance eva
 
 Note that a list of rules can be shared by many inquirers, either explicitly or by using class instance variable inheritance feature
 
-Default Values
---------------
-
+Default Values for module configuration
+---------------------------------------
 __Cant__ module has "reasonable" default values for __fold__, __die__, __rules__
 
 The Cant::Editable module gather methods to configure a Cant engine (fold, die, rules), and defaults to Cant module values
 
 Inheritance
 -----------
-
 Cant support _basic_ inheritance functionality for configuration with the Cant::Embeddable module ...
 Ouch what that means ?
 
@@ -139,7 +128,6 @@ Well, have a look at read documentation and source code embeddable.rb if you are
 
 What is the arity of a __predicate__ function ? 
 -----------------------------------------------
-
 You are free to pick one that suit your needs
 
 There are a couple of things to drive your choice :
@@ -162,7 +150,6 @@ So pick your own semantic, or grow an existing one
 
 How do I verify authorization ?
 ===============================
-
 Cant very meaning is : you can unless you cant, and you define what you cant
 
 Defining _not_ or _negative_ ability require some thinking, and I believe we can do it :)
@@ -171,34 +158,39 @@ Use __cant?__ method to check
 
 Use __die\_if\_cant!__ method to check and run __die__ code
 
-When you check, provide the list of parameters you specified in your list of rules
+When you check, provide the list of parameters you specified in the list of rules you want to verify
 
 Inspired from
 =============
-
 * [cancan](https://github.com/ryanb/cancan), as I started with it and saw that it did not functioned in presence of mongoid as of < 1.5 ... so I planned to do something no dependent of a model implementation
 
-* [learn you some erlang?](http://learnyousomeerlang.com/higher-order-functions#maps-filters-folds), for the fold illustrations
+* [learn you some erlang?](http://learnyousomeerlang.com/higher-order-functions#maps-filters-folds), for the fold illustrations had great impact
 
 * [Howard](http://rubyquiz.com/quiz67.html) and [Nunemaker](http://railstips.org/blog/archives/2006/11/18/class-and-instance-variables-in-ruby/) for inheritable class instance variables
 
-
-Does it work ?
-==============
-
+Does it work on my interpreter?
+===============================
+rspec
+-----
 specs are green on mri : [1.9.2-p0, 1.8.7-p302]
 
-C0 coverage is acceptable under ruby-1.9.2-p0 (100% is acceptable for this kind of code)
-
-There is few lines of code as concept is simple : fold a list of functions...
+There is few lines of code and concept is simple : fold a list of functions...
 Though, we can make it better and lesser, cant we ?
 
+1.9.2 coverage
+--------------
+can be ran with
+
+    COVERAGE=true rspec /spec
+
+Licence
+=======
+Is MIT, available in source code
 
 Help|Contribute
 ===============
-
 Fill an item in tracker
 
 Add a page on wiki
 
-Add a spec, open a pull request on topic branch, commit granted on first accepted patch|pull
+Add a spec, open a pull request on topic branch, commit granted on first accepted patch

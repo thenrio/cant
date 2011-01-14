@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    cant (0.1.0)
+    cant (0.2.1)
 
 GEM
   remote: http://rubygems.org/
@@ -65,5 +65,5 @@ DEPENDENCIES
   cant!
   growl
   guard-rspec
-  rspec
-  wrong
+  rspec (~> 2)
+  wrong (>= 0.4)

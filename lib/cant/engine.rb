@@ -83,18 +83,28 @@ module Cant
   
   # questionable interface
   module Questionable
-    attr_writer :cantfiguration
-    def cantfiguration
-      @cantfiguration ||= Object.new.extend(Editable)
-    end
-    # return strategy fold for rules with context (a rule or nil)
+    # Public : verify whether you cant
+    #
+    # *args - list of params to pass to rules
+    #
+    # Returns : a rule that cant, according rules folding, or nil
     def cant?(*args)
       cantfiguration.fold.call(cantfiguration.rules, self, *args)
     end
-    # return evaled die function of strategy fold
+    # Public : run die code if you cant
+    #
+    # *args - list of params to pass to rules and die function
+    #
+    # Returns : die result or nil if it can
     def die_if_cant!(*args)
       rule = cant?(*args)
       rule.die!(*args) if rule
+    end
+    
+    attr_writer :cantfiguration
+    protected
+    def cantfiguration
+      @cantfiguration ||= Object.new.extend(Editable)
     end
   end
 
@@ -112,8 +122,9 @@ module Cant
   # - die(*args), that cant raise if convenient
   #
   # this class could have been:
-  # -spared
-  # -an Array, with an optional syntactic sugar
+  # - spared
+  # - an Array, with an optional syntactic sugar
+  # - a property list in erlang
   class Rule
     # a new rule with a predicate and response function
     def initialize(predicate=nil, die=Cant.die)
